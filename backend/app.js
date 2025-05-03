@@ -28,3 +28,6 @@ pool.query('SELECT NOW()', (err, result) => {
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
+
+const authRoutes = require('./routes/auth.routes');
+app.use('/api/auth', authRoutes);
