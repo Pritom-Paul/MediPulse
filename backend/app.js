@@ -31,3 +31,6 @@ app.listen(PORT, () => {
 
 const authRoutes = require('./routes/auth.routes');
 app.use('/api/auth', authRoutes);
+
+const patientRoutes = require('./routes/patient.routes');
+app.use('/api/patients', patientRoutes);

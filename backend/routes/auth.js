@@ -40,3 +40,4 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+app.use('/api/patients', require('./routes/patient.routes'));
