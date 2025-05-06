@@ -34,3 +34,9 @@ app.use('/api/auth', authRoutes);
 
 const patientRoutes = require('./routes/patient.routes');
 app.use('/api/patients', patientRoutes);
+
+const fileRoutes = require('./routes/file.routes');
+app.use('/api/files', fileRoutes);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
