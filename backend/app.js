@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const pool = require('./db'); // assumes db.js is in the same folder
+const pool = require('./db');
+const verifyToken = require('./middleware/auth'); // Make sure this exists
 require('dotenv').config();
 
 const app = express();
@@ -9,11 +10,30 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Test Route
+// Routes
 app.get('/', (req, res) => {
   res.send('🚀 Dental Management System backend is running!');
 });
+
+// Add this protected route
+app.get('/api/protected', verifyToken, (req, res) => {
+  res.json({ 
+    message: 'Protected dental data accessed successfully',
+    doctor: req.doctor // Contains decoded JWT info
+  });
+});
+
+// Existing routes
+const authRoutes = require('./routes/auth.routes');
+app.use('/api/auth', authRoutes);
+
+const patientRoutes = require('./routes/patient.routes');
+app.use('/api/patients', patientRoutes);
+
+const fileRoutes = require('./routes/file.routes');
+app.use('/api/files', fileRoutes);
 
 // DB Connection Test
 pool.query('SELECT NOW()', (err, result) => {
@@ -29,14 +49,7 @@ app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
 
-const authRoutes = require('./routes/auth.routes');
-app.use('/api/auth', authRoutes);
-
-const patientRoutes = require('./routes/patient.routes');
-app.use('/api/patients', patientRoutes);
-
-const fileRoutes = require('./routes/file.routes');
-app.use('/api/files', fileRoutes);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Error handling for undefined routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
