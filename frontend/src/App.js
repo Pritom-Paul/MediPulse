@@ -178,7 +178,9 @@ function App() {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
-      <h1>Dental Management System</h1>
+      <h1 className="text-3xl font-bold underline text-green-500">
+      Dental Management System
+    </h1>
       {!token ? (
         <form onSubmit={handleLogin}>
           <div>
