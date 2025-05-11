@@ -1,7 +1,14 @@
 {
+  "files": [],
+  "references": [
+    {
+      "path": "./jsconfig.app.json"
+    }
+  ],
   "compilerOptions": {
-	"typeRoots": ["./node_modules/@types"],
-	"types": []
-  },
-  "exclude": ["node_modules"]
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
 }
