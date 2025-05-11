@@ -1,0 +1,254 @@
+@import "tailwindcss";
+/* Base Styles */
+:root {
+  --primary: #2c7be5;
+  --secondary: #6c757d;
+  --success: #00a854;
+  --danger: #ff4136;
+  --light: #f8f9fa;
+  --dark: #343a40;
+  --border: #dee2e6;
+  --text: #212529;
+  --text-light: #6c757d;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+  background-color: #f5f7fa;
+}
+
+/* Utility Classes */
+.text-center {
+  text-align: center;
+}
+
+/* App Container */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.app-header {
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* Auth Styles */
+.auth-container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-form h2 {
+  color: var(--dark);
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Form Styles */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-group input {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(44, 123, 229, 0.2);
+}
+
+/* Button Styles */
+.btn {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn.primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn.secondary {
+  background-color: var(--secondary);
+  color: white;
+}
+
+.btn.small {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Dashboard Styles */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h2 {
+  color: var(--dark);
+  font-weight: 500;
+}
+
+/* Patient Grid */
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.patient-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.patient-info {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.patient-info h3 {
+  color: var(--dark);
+  margin-bottom: 0.5rem;
+}
+
+.patient-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-bottom: 0.75rem;
+}
+
+.patient-tags, .patient-notes {
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  color: var(--text-light);
+}
+
+.patient-files {
+  padding: 1.5rem;
+}
+
+.patient-files h4 {
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+/* File List */
+.file-list {
+  list-style: none;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.file-type {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.file-date {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* Messages */
+.message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.message.success {
+  background-color: rgba(0, 168, 84, 0.1);
+  color: var(--success);
+  border-left: 4px solid var(--success);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Empty States */
+.empty-state, .no-files {
+  color: var(--text-light);
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-light);
+}
