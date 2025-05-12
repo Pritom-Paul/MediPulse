@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react" // Added useEffect
 import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,15 @@ export function Login() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  // Load remembered email when component mounts
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail')
+    if (rememberedEmail) {
+      setEmail(rememberedEmail)
+      setRememberMe(true)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -52,10 +61,8 @@ export function Login() {
       }
 
       navigate('/')
-      console.log("Login success")
     } catch (err) {
       setError(err.message)
-      console.log("Login failed:", err.message)
     } finally {
       setLoading(false)
     }
