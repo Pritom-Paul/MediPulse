@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
 import { FileText, Lock, Tag, UserPlus } from "lucide-react"
+import { Link } from "react-router-dom"
 
 export function Landing() {
   return (
@@ -21,10 +22,9 @@ export function Landing() {
                 with ease.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button size="lg">Login</Button>
-                {/* <Button size="lg" variant="outline">
-                  Learn More
-                </Button> */}
+                <Link to="/login">
+                    <Button size="lg">Login</Button>
+                </Link>
               </div>
             </div>
             <div className="mx-auto lg:ml-auto">
