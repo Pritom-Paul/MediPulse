@@ -34,6 +34,9 @@ export function Header() {
             <a href="#cta" className="text-sm font-medium hover:text-primary transition-colors">
               Contact
             </a>
+            <a href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+              Dashboard
+            </a>
             {isLoggedIn ? (
               <button 
                 onClick={handleLogout}
