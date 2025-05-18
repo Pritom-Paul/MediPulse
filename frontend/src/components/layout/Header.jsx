@@ -20,6 +20,13 @@ export function Header() {
     navigate('/')
   }
 
+  const handleDashboardClick = (e) => {
+    if (!isLoggedIn) {
+      e.preventDefault()
+      navigate('/login')
+    }
+  }
+
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -28,13 +35,11 @@ export function Header() {
         </Link>
         <div className="flex items-center gap-4">
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">
-              Features
-            </a>
-            <a href="#cta" className="text-sm font-medium hover:text-primary transition-colors">
-              Contact
-            </a>
-            <a href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+            <a 
+              href="/dashboard" 
+              onClick={handleDashboardClick}
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
               Dashboard
             </a>
             {isLoggedIn ? (
