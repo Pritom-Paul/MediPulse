@@ -44,6 +44,23 @@ pool.query('SELECT NOW()', (err, result) => {
   }
 });
 
+// Handle Multer errors and others
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err.message);
+
+  if (err instanceof multer.MulterError) {
+    // Handle Multer-specific errors
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  }
+
+  if (err.message === 'Unsupported file type') {
+    return res.status(400).json({ error: 'Unsupported file type. Allowed: JPEG, PNG, PDF.' });
+  }
+
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);

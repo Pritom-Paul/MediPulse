@@ -1,0 +1,391 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useDropzone } from "react-dropzone";
+import { useState, useCallback } from "react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { FileText, Upload, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from 'sonner';
+
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  dob: z.string().refine((val) => !isNaN(new Date(val).getTime()), {
+    message: "Please enter a valid date",
+  }),
+  unique_id: z.string().min(3, {
+    message: "Patient ID must be at least 3 characters.",
+  }),
+  tags: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export function AddPatient() {
+  const [files, setFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const navigate = useNavigate();
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      dob: "",
+      unique_id: "",
+      tags: "",
+      notes: "",
+    },
+  });
+
+  const onDrop = useCallback((acceptedFiles) => {
+    console.log("Accepted files:", acceptedFiles);
+    setFiles((prevFiles) => [
+      ...prevFiles,
+      ...acceptedFiles.map((file) => {
+        const fileType = file.type.includes("image") ? "xray" : "receipt";
+        console.log(`File ${file.name} detected as type: ${fileType}`);
+        return {
+          file, // Store the original file object
+          preview: URL.createObjectURL(file),
+          type: fileType,
+          name: file.name,
+          size: file.size
+        };
+      }),
+    ]);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png"],
+      "application/pdf": [".pdf"],
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+  });
+
+  const removeFile = (index) => {
+    console.log("Removing file at index:", index);
+    const newFiles = [...files];
+    URL.revokeObjectURL(newFiles[index].preview);
+    newFiles.splice(index, 1);
+    setFiles(newFiles);
+  };
+
+  const onSubmit = async (values) => {
+    console.log("Form values:", values);
+    console.log("Files to upload:", files);
+
+    setIsUploading(true);
+    try {
+      // Show loading notification
+      const loadingToast = toast.loading('Creating patient record...');
+      
+      // First create the patient record
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const patientResponse = await fetch("http://localhost:5000/api/patients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!patientResponse.ok) {
+        const errorData = await patientResponse.json();
+        console.error("Patient creation error:", errorData);
+        throw new Error(errorData.error || "Failed to create patient record");
+      }
+
+      const patientData = await patientResponse.json();
+      const patientId = patientData.id;
+      console.log("Patient created with ID:", patientId);
+      
+      toast.dismiss(loadingToast);
+      toast.success('Patient record created successfully!');
+
+      // Then upload files if any
+      if (files.length > 0) {
+        console.log("Starting file uploads...");
+        const fileUploadToast = toast.loading(`Uploading ${files.length} file(s)...`);
+        
+        let successfulUploads = 0;
+        
+        // Upload files sequentially
+        for (const fileObj of files) {
+          try {
+            const formData = new FormData();
+            formData.append("file", fileObj.file);
+            formData.append("file_type", fileObj.type);
+
+            console.log(`Uploading ${fileObj.name} as ${fileObj.type}`);
+
+            const uploadResponse = await fetch(
+              `http://localhost:5000/api/files/upload/${patientId}`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+              }
+            );
+
+            if (!uploadResponse.ok) {
+              const errorData = await uploadResponse.json();
+              console.error(`File upload error for ${fileObj.name}:`, errorData);
+              toast.error(`Failed to upload ${fileObj.name}`);
+              continue; // Skip to next file instead of throwing error
+            }
+
+            successfulUploads++;
+            toast.success(`Uploaded ${fileObj.name} successfully`);
+          } catch (error) {
+            console.error(`Error uploading ${fileObj.name}:`, error);
+            toast.error(`Error uploading ${fileObj.name}`);
+          }
+        }
+        
+        toast.dismiss(fileUploadToast);
+        if (successfulUploads === files.length) {
+          toast.success('All files uploaded successfully!');
+        } else {
+          toast.warning(`Uploaded ${successfulUploads} of ${files.length} files`);
+        }
+      }
+
+      // Reset form and redirect
+      form.reset();
+      setFiles([]);
+      setTimeout(() => navigate("/dashboard"), 1500);
+    } catch (error) {
+      console.error("Error in patient creation or file upload:", error);
+      toast.error(error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 py-6 md:py-12 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+              Add New Patient
+            </h1>
+            <p className="mt-3 text-muted-foreground md:text-lg max-w-[600px] mx-auto">
+              Register a new patient and document their dental records.
+            </p>
+          </div>
+
+          <Card className="max-w-3xl mx-auto">
+            <CardHeader>
+              <CardTitle>Patient Information</CardTitle>
+              <CardDescription>
+                Fill in the patient details and upload relevant documents.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
+                  {/* Form fields remain the same */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="dob"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date of Birth</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="unique_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Patient ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="DENT-001" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Unique identifier for the patient
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tags</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Ortho, Implant, Pediatric"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Comma-separated tags for easy categorization
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clinical Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter clinical observations, treatment plans, or other relevant notes..."
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Include any relevant dental history or current concerns
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div>
+                    <FormLabel>Patient Files</FormLabel>
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${
+                        isDragActive
+                          ? "border-primary bg-primary/10"
+                          : "border-border"
+                      }`}
+                    >
+                      <input {...getInputProps()} />
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {isDragActive
+                            ? "Drop the files here"
+                            : "Drag & drop dental records, X-rays, or receipts here, or click to select files"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Supported formats: JPG, PNG, PDF (max 10MB each)
+                        </p>
+                      </div>
+                    </div>
+
+                    {files.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <h4 className="text-sm font-medium">Selected Files</h4>
+                        <ul className="space-y-2">
+                          {files.map((fileObj, index) => (
+                            <li
+                              key={fileObj.name}
+                              className="flex items-center justify-between p-2 border rounded-md"
+                            >
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{fileObj.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({fileObj.type === "xray" ? "X-ray" : "Receipt/Document"})
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {Math.round(fileObj.size / 1024)} KB
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => removeFile(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate(-1)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isUploading}>
+                      {isUploading ? "Saving..." : "Save Patient Record"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}

@@ -54,6 +54,10 @@ router.get('/list/:patientId', authenticate, async (req, res) => {
   
   const path = require('path');
 const fs = require('fs');
+const uploadDir = 'uploads/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Download a file by ID
 router.get('/download/:fileId', authenticate, async (req, res) => {

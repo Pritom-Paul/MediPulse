@@ -2,6 +2,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Landing } from "@/pages/Landing"
 import { Login } from "@/pages/Login"
 import { Dashboard } from "@/pages/Dashboard"
+import {AddPatient} from "@/pages/AddPatient"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 
 function App() {
@@ -12,6 +13,8 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/add-patient" element={<AddPatient />} />
+          {/* Add more routes as needed */}
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
