@@ -59,26 +59,44 @@ export function AddPatient() {
     },
   });
 
-  const onDrop = useCallback((acceptedFiles) => {
-    console.log("Accepted files:", acceptedFiles);
+  const onDropXray = useCallback((acceptedFiles) => {
+    console.log("Accepted X-ray files:", acceptedFiles);
     setFiles((prevFiles) => [
       ...prevFiles,
-      ...acceptedFiles.map((file) => {
-        const fileType = file.type.includes("image") ? "xray" : "prescription";
-        console.log(`File ${file.name} detected as type: ${fileType}`);
-        return {
-          file, // Store the original file object
-          preview: URL.createObjectURL(file),
-          type: fileType,
-          name: file.name,
-          size: file.size
-        };
-      }),
+      ...acceptedFiles.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        type: "xray",
+        name: file.name,
+        size: file.size
+      })),
     ]);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+  const onDropPrescription = useCallback((acceptedFiles) => {
+    console.log("Accepted Prescription files:", acceptedFiles);
+    setFiles((prevFiles) => [
+      ...prevFiles,
+      ...acceptedFiles.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        type: "prescription",
+        name: file.name,
+        size: file.size
+      })),
+    ]);
+  }, []);
+
+  const xrayDropzone = useDropzone({
+    onDrop: onDropXray,
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png"],
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+  });
+
+  const prescriptionDropzone = useDropzone({
+    onDrop: onDropPrescription,
     accept: {
       "image/*": [".jpeg", ".jpg", ".png"],
       "application/pdf": [".pdf"],
@@ -100,10 +118,8 @@ export function AddPatient() {
 
     setIsUploading(true);
     try {
-      // Show loading notification
       const loadingToast = toast.loading('Creating patient record...');
       
-      // First create the patient record
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("No authentication token found");
@@ -131,14 +147,12 @@ export function AddPatient() {
       toast.dismiss(loadingToast);
       toast.success('Patient record created successfully!');
 
-      // Then upload files if any
       if (files.length > 0) {
         console.log("Starting file uploads...");
         const fileUploadToast = toast.loading(`Uploading ${files.length} file(s)...`);
         
         let successfulUploads = 0;
         
-        // Upload files sequentially
         for (const fileObj of files) {
           try {
             const formData = new FormData();
@@ -162,7 +176,7 @@ export function AddPatient() {
               const errorData = await uploadResponse.json();
               console.error(`File upload error for ${fileObj.name}:`, errorData);
               toast.error(`Failed to upload ${fileObj.name}`);
-              continue; // Skip to next file instead of throwing error
+              continue;
             }
 
             successfulUploads++;
@@ -181,10 +195,8 @@ export function AddPatient() {
         }
       }
 
-      // Reset form
       form.reset();
       setFiles([]);
-      // setTimeout(() => navigate("/dashboard"), 15000);
     } catch (error) {
       console.error("Error in patient creation or file upload:", error);
       toast.error(error.message);
@@ -192,6 +204,10 @@ export function AddPatient() {
       setIsUploading(false);
     }
   };
+
+  // Separate files by type for display
+  const xrayFiles = files.filter(file => file.type === "xray");
+  const prescriptionFiles = files.filter(file => file.type === "prescription");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -309,63 +325,124 @@ export function AddPatient() {
                     )}
                   />
 
-                  <div>
-                    <FormLabel>Patient Files</FormLabel>
-                    <div
-                      {...getRootProps()}
-                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${
-                        isDragActive
-                          ? "border-primary bg-primary/10"
-                          : "border-border"
-                      }`}
-                    >
-                      <input {...getInputProps()} />
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          {isDragActive
-                            ? "Drop the files here"
-                            : "Drag & drop dental records, X-rays, or receipts here, or click to select files"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Supported formats: JPG, PNG, PDF (max 10MB each)
-                        </p>
+                  <div className="space-y-6">
+                    <div>
+                      <FormLabel>X-ray Images</FormLabel>
+                      <div
+                        {...xrayDropzone.getRootProps()}
+                        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${
+                          xrayDropzone.isDragActive
+                            ? "border-primary bg-primary/10"
+                            : "border-border"
+                        }`}
+                      >
+                        <input {...xrayDropzone.getInputProps()} />
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            {xrayDropzone.isDragActive
+                              ? "Drop the X-ray images here"
+                              : "Drag & drop X-ray images here, or click to select files"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Supported formats: JPG, PNG (max 10MB each)
+                          </p>
+                        </div>
                       </div>
+
+                      {xrayFiles.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <h4 className="text-sm font-medium">Selected X-rays</h4>
+                          <ul className="space-y-2">
+                            {xrayFiles.map((fileObj, index) => (
+                              <li
+                                key={fileObj.name}
+                                className="flex items-center justify-between p-2 border rounded-md"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">{fileObj.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    (X-ray)
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {Math.round(fileObj.size / 1024)} KB
+                                  </span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => removeFile(files.findIndex(f => f.name === fileObj.name))}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
 
-                    {files.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <h4 className="text-sm font-medium">Selected Files</h4>
-                        <ul className="space-y-2">
-                          {files.map((fileObj, index) => (
-                            <li
-                              key={fileObj.name}
-                              className="flex items-center justify-between p-2 border rounded-md"
-                            >
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{fileObj.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  ({fileObj.type === "xray" ? "X-ray" : "Prescription/Document"})
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {Math.round(fileObj.size / 1024)} KB
-                                </span>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => removeFile(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
+                    <div>
+                      <FormLabel>Prescriptions & Documents</FormLabel>
+                      <div
+                        {...prescriptionDropzone.getRootProps()}
+                        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${
+                          prescriptionDropzone.isDragActive
+                            ? "border-primary bg-primary/10"
+                            : "border-border"
+                        }`}
+                      >
+                        <input {...prescriptionDropzone.getInputProps()} />
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            {prescriptionDropzone.isDragActive
+                              ? "Drop the documents here"
+                              : "Drag & drop prescriptions, reports, or documents here, or click to select files"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Supported formats: JPG, PNG, PDF (max 10MB each)
+                          </p>
+                        </div>
                       </div>
-                    )}
+
+                      {prescriptionFiles.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <h4 className="text-sm font-medium">Selected Documents</h4>
+                          <ul className="space-y-2">
+                            {prescriptionFiles.map((fileObj, index) => (
+                              <li
+                                key={fileObj.name}
+                                className="flex items-center justify-between p-2 border rounded-md"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">{fileObj.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    (Document)
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {Math.round(fileObj.size / 1024)} KB
+                                  </span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => removeFile(files.findIndex(f => f.name === fileObj.name))}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-end gap-4">
