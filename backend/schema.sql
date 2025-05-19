@@ -22,6 +22,6 @@ CREATE TABLE files (
     id SERIAL PRIMARY KEY,
     patient_id INTEGER REFERENCES patients(id) ON DELETE CASCADE,
     file_path TEXT NOT NULL,
-    file_type VARCHAR(50) CHECK (file_type IN ('xray', 'receipt')),
+    file_type VARCHAR(50) CHECK (file_type IN ('xray', 'prescription')),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

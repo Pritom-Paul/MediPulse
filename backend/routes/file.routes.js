@@ -15,7 +15,7 @@ router.post(
     const file = req.file;
 
     if (!file) return res.status(400).json({ message: 'File upload failed' });
-    if (!['xray', 'receipt'].includes(file_type)) {
+    if (!['xray', 'prescription'].includes(file_type)) {
       return res.status(400).json({ message: 'Invalid file type' });
     }
 

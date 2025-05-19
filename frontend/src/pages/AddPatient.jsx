@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/card";
 import { FileText, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from 'sonner';
+import { Toaster } from "@/components/ui/sonner"
+import { toast } from "sonner"
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -63,7 +64,7 @@ export function AddPatient() {
     setFiles((prevFiles) => [
       ...prevFiles,
       ...acceptedFiles.map((file) => {
-        const fileType = file.type.includes("image") ? "xray" : "receipt";
+        const fileType = file.type.includes("image") ? "xray" : "prescription";
         console.log(`File ${file.name} detected as type: ${fileType}`);
         return {
           file, // Store the original file object
@@ -180,10 +181,10 @@ export function AddPatient() {
         }
       }
 
-      // Reset form and redirect
+      // Reset form
       form.reset();
       setFiles([]);
-      setTimeout(() => navigate("/dashboard"), 1500);
+      // setTimeout(() => navigate("/dashboard"), 15000);
     } catch (error) {
       console.error("Error in patient creation or file upload:", error);
       toast.error(error.message);
@@ -345,7 +346,7 @@ export function AddPatient() {
                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm">{fileObj.name}</span>
                                 <span className="text-xs text-muted-foreground">
-                                  ({fileObj.type === "xray" ? "X-ray" : "Receipt/Document"})
+                                  ({fileObj.type === "xray" ? "X-ray" : "Prescription/Document"})
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                   {Math.round(fileObj.size / 1024)} KB
@@ -386,6 +387,7 @@ export function AddPatient() {
         </div>
       </main>
       <Footer />
+      <Toaster />
     </div>
   );
 }
