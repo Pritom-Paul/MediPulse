@@ -36,7 +36,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
+import { useEffect } from "react";
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
@@ -44,9 +44,7 @@ const formSchema = z.object({
   dob: z.date({
     required_error: "A date of birth is required.",
   }),
-  unique_id: z.string().min(3, {
-    message: "Patient ID must be at least 3 characters.",
-  }),
+  unique_id: z.string().optional(), // Changed to optional
   tags: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -66,6 +64,20 @@ export function AddPatient() {
       notes: "",
     },
   });
+
+  // Watch name and dob fields
+  const name = form.watch("name");
+  const dob = form.watch("dob");
+
+  // Generate patient ID whenever name or dob changes
+  useEffect(() => {
+    if (name && dob) {
+      const formattedName = name.trim().replace(/\s+/g, "_").toUpperCase();
+      const formattedDob = format(dob, "yyyyMMdd");
+      const generatedId = `${formattedName}_${formattedDob}`;
+      form.setValue("unique_id", generatedId);
+    }
+  }, [name, dob, form.setValue]);
 
   const onDropXray = useCallback((acceptedFiles) => {
     console.log("Accepted X-ray files:", acceptedFiles);
@@ -259,7 +271,7 @@ export function AddPatient() {
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="John Doe" {...field} />
+                            <Input placeholder="Full Name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -315,10 +327,15 @@ export function AddPatient() {
                         <FormItem>
                           <FormLabel>Patient ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="DENT-001" {...field} />
+                            <Input 
+                              placeholder="Will be generated automatically" 
+                              {...field} 
+                              disabled 
+                              className="bg-muted" // Optional: gives it a disabled look
+                            />
                           </FormControl>
                           <FormDescription>
-                            Unique identifier for the patient
+                            Auto-generated from name and date of birth
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
