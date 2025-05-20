@@ -24,17 +24,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FileText, Upload, X } from "lucide-react";
+import { FileText, Upload, X, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  dob: z.string().refine((val) => !isNaN(new Date(val).getTime()), {
-    message: "Please enter a valid date",
+  dob: z.date({
+    required_error: "A date of birth is required.",
   }),
   unique_id: z.string().min(3, {
     message: "Patient ID must be at least 3 characters.",
@@ -52,7 +60,7 @@ export function AddPatient() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      dob: "",
+      dob: undefined,
       unique_id: "",
       tags: "",
       notes: "",
@@ -116,6 +124,12 @@ export function AddPatient() {
     console.log("Form values:", values);
     console.log("Files to upload:", files);
 
+    // Format date to string for API request
+    const formattedValues = {
+      ...values,
+      dob: format(values.dob, "yyyy-MM-dd"),
+    };
+
     setIsUploading(true);
     try {
       const loadingToast = toast.loading('Creating patient record...');
@@ -131,7 +145,7 @@ export function AddPatient() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(formattedValues),
       });
 
       if (!patientResponse.ok) {
@@ -256,11 +270,39 @@ export function AddPatient() {
                       control={form.control}
                       name="dob"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Date of Birth</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
+                          <div className="relative">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                  type="button"
+                                >
+                                  <Calendar className="mr-2 h-4 w-4" />
+                                  {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => {
+                                    field.onChange(date);
+                                    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+                                  }}
+                                  disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
