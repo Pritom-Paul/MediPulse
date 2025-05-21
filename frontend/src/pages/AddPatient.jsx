@@ -71,12 +71,56 @@ export function AddPatient() {
 
   // Generate patient ID whenever name or dob changes
   useEffect(() => {
-    if (name && dob) {
-      const formattedName = name.trim().replace(/\s+/g, "_").toUpperCase();
-      const formattedDob = format(dob, "yyyyMMdd");
-      const generatedId = `${formattedName}_${formattedDob}`;
-      form.setValue("unique_id", generatedId);
-    }
+    const generateUniqueId = async () => {
+      if (name && dob) {
+        const formattedName = name.trim().replace(/\s+/g, "_").toUpperCase();
+        const formattedDob = format(dob, "yyyyMMdd");
+        let generatedId = `${formattedName}_${formattedDob}`;
+        
+        try {
+          // Check if the ID exists in the database
+          const token = localStorage.getItem("token");
+          const response = await fetch(`http://localhost:5000/api/patients/check-id?unique_id=${generatedId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.exists) {
+              // Append current date if ID exists
+              const currentDate = format(new Date(), "yyyyMMdd");
+              generatedId = `${generatedId}_${currentDate}`;
+              
+              // Check again with the new ID
+              const secondResponse = await fetch(`http://localhost:5000/api/patients/check-id?unique_id=${generatedId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              
+              if (secondResponse.ok) {
+                const secondData = await secondResponse.json();
+                if (secondData.exists) {
+                  // Append current time if still exists
+                  const currentTime = format(new Date(), "HHmmss");
+                  generatedId = `${generatedId}_${currentTime}`;
+                }
+              }
+            }
+          }
+          
+          form.setValue("unique_id", generatedId);
+        } catch (error) {
+          console.error("Error checking unique ID:", error);
+          // Fallback to original ID if there's an error checking
+          form.setValue("unique_id", generatedId);
+        }
+      }
+    };
+
+    generateUniqueId();
   }, [name, dob, form.setValue]);
 
   const onDropXray = useCallback((acceptedFiles) => {

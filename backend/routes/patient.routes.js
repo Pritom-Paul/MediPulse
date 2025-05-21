@@ -30,6 +30,16 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/check-id', verifyToken, async (req, res) => {
+  const { unique_id } = req.query;
+  try {
+    const result = await pool.query('SELECT EXISTS(SELECT 1 FROM patients WHERE unique_id = $1)', [unique_id]);
+    res.json({ exists: result.rows[0].exists });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // READ all patients
 router.get('/', verifyToken, async (req, res) => {
   try {
