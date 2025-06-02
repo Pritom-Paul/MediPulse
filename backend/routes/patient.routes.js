@@ -43,9 +43,18 @@ router.get('/check-id', verifyToken, async (req, res) => {
 // READ all patients
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM patients ORDER BY id DESC');
+    const result = await pool.query(`
+      SELECT 
+        p.*,
+        COUNT(f.id) AS file_count
+      FROM patients p
+      LEFT JOIN files f ON p.id = f.patient_id
+      GROUP BY p.id
+      ORDER BY p.id DESC
+    `);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -53,10 +62,20 @@ router.get('/', verifyToken, async (req, res) => {
 // READ single patient
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
+    const result = await pool.query(`
+      SELECT 
+        p.*,
+        COUNT(f.id) AS file_count
+      FROM patients p
+      LEFT JOIN files f ON p.id = f.patient_id
+      WHERE p.id = $1
+      GROUP BY p.id
+    `, [req.params.id]);
+    
     if (result.rows.length === 0) return res.status(404).json({ message: 'Patient not found' });
     res.json(result.rows[0]);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
