@@ -32,19 +32,6 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             </Link>
-            <Link to="/add-files">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader className="pb-2">
-                  <FilePlus className="h-10 w-10 mb-2 text-primary" />
-                  <CardTitle>Add Files</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-                    Upload lab reports, prescriptions, or other relevant patient files.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </Link>
             <Link to="/add-patient">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader className="pb-2">

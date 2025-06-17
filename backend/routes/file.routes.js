@@ -60,10 +60,21 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Download a file by ID
-router.get('/download/:fileId', authenticate, async (req, res) => {
+const jwt = require('jsonwebtoken'); // Add this near the top of your file if not already present
+
+router.get('/download/:fileId', async (req, res) => {
   const { fileId } = req.params;
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
+
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
 
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Proceed with file retrieval
     const result = await pool.query(
       'SELECT file_path FROM files WHERE id = $1',
       [fileId]
@@ -76,15 +87,20 @@ router.get('/download/:fileId', authenticate, async (req, res) => {
     const filePath = result.rows[0].file_path;
     const fullPath = path.resolve(filePath);
 
-    // Check if file exists
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ message: 'File missing from server' });
     }
 
-    res.download(fullPath);
+    // Serve file with inline disposition for viewing in iframe or image
+    const fileName = path.basename(fullPath);
+    res.sendFile(fullPath, {
+      headers: {
+        'Content-Disposition': `inline; filename="${fileName}"`,
+      },
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
 });
 

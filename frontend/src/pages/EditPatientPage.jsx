@@ -54,6 +54,7 @@ export function EditPatientPage() {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState([]); // New state for files
   const [isUploading, setIsUploading] = useState(false);
+  const [existingFiles, setExistingFiles] = useState([]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -146,6 +147,18 @@ export function EditPatientPage() {
           tags: data.tags || "",
           notes: data.notes || "",
         });
+
+        // Fetch patient files
+        const filesRes = await fetch(`http://localhost:5000/api/files/list/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!filesRes.ok) throw new Error("Failed to fetch patient files");
+
+        const filesData = await filesRes.json();
+        setExistingFiles(filesData);
       } catch (err) {
         console.error(err);
         toast.error("Failed to load patient details");
@@ -157,6 +170,28 @@ export function EditPatientPage() {
     fetchPatient();
   }, [id, form]);
 
+  const handleDeleteExistingFile = async (fileId) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`http://localhost:5000/api/files/delete/${fileId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete file");
+      }
+
+      setExistingFiles(prev => prev.filter(file => file.id !== fileId));
+      toast.success("File deleted successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete file");
+    }
+  };
   const onSubmit = async (values) => {
     setIsUploading(true);
     try {
@@ -349,6 +384,35 @@ export function EditPatientPage() {
                       </FormItem>
                     )}
                   />
+
+                  {existingFiles.length > 0 && (
+                    <div className="space-y-4 mb-6">
+                      <h4 className="text-sm font-medium">Existing Files</h4>
+                      <ul className="space-y-2">
+                        {existingFiles.map((file) => (
+                          <li
+                            key={file.id}
+                            className="flex items-center justify-between p-2 border rounded-md bg-muted/20"
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{file.filename || file.file_path.split("/").pop()}</span>
+                              <span className="text-xs text-muted-foreground">{file.file_type}</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => handleDeleteExistingFile(file.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Add file dropzone sections */}
                   <div className="space-y-6">

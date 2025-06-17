@@ -436,6 +436,14 @@ export function PatientsPage() {
                 Download Files
               </Button>
 
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/patient/${selectedPatient.id}`)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Full Record
+              </Button>
+
               <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
                 Close
               </Button>

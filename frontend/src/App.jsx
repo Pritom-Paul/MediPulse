@@ -5,6 +5,7 @@ import { Dashboard } from "@/pages/Dashboard"
 import {AddPatient} from "@/pages/AddPatient"
 import { PatientsPage } from "./pages/PatientsPage" 
 import { EditPatientPage } from "./pages/EditPatientPage"
+import { PatientDetailPage } from "./pages/PatientDetailPage" 
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <Route path="/add-patient" element={<AddPatient />} />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/edit-patient/:id" element={<EditPatientPage />} />
+          <Route path="/patient/:id" element={<PatientDetailPage />} />
           {/* Add more routes as needed */}
         </Routes>
       </BrowserRouter>
