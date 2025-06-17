@@ -403,18 +403,52 @@ export function PatientsPage() {
               )}
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setViewDialogOpen(false)
-                    navigate(`/edit-patient/${selectedPatient.id}`)
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Patient
-                </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const token = localStorage.getItem("token")
+                  if (!token || !selectedPatient?.id) return
+                  const url = `http://localhost:5000/api/files/download-all/${selectedPatient.id}`
+
+                  fetch(url, {
+                    method: "GET",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  })
+                    .then((res) => {
+                      if (!res.ok) throw new Error("Failed to download files")
+                      return res.blob()
+                    })
+                    .then((blob) => {
+                      const url = window.URL.createObjectURL(new Blob([blob]))
+                      const link = document.createElement("a")
+                      link.href = url
+                      link.setAttribute("download", `patient_${selectedPatient.id}_files.zip`)
+                      document.body.appendChild(link)
+                      link.click()
+                      link.remove()
+                    })
+                    .catch(() => toast.error("Failed to download patient files"))
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Files
+              </Button>
+
+              <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                Close
+              </Button>
+
+              <Button
+                onClick={() => {
+                  setViewDialogOpen(false)
+                  navigate(`/edit-patient/${selectedPatient.id}`)
+                }}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Patient
+              </Button>
               </div>
             </div>
           )}

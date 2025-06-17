@@ -120,3 +120,45 @@ router.delete('/delete/:fileId', authenticate, async (req, res) => {
     }
   });
   
+const archiver = require('archiver');
+
+router.get('/download-all/:patientId', authenticate, async (req, res) => {
+  const { patientId } = req.params;
+
+  try {
+    const result = await pool.query(
+      'SELECT file_path FROM files WHERE patient_id = $1',
+      [patientId]
+    );
+
+    const files = result.rows;
+
+    if (files.length === 0) {
+      return res.status(404).json({ message: 'No files found for this patient' });
+    }
+
+    res.setHeader('Content-Disposition', `attachment; filename=patient_${patientId}_files.zip`);
+    res.setHeader('Content-Type', 'application/zip');
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    archive.pipe(res);
+
+    files.forEach((file, index) => {
+      const fullPath = path.resolve(file.file_path);
+      const filename = path.basename(fullPath);
+      if (fs.existsSync(fullPath)) {
+        archive.file(fullPath, { name: `${index + 1}_${filename}` });
+      }
+    });
+
+    archive.finalize();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
